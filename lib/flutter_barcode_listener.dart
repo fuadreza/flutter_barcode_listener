@@ -19,6 +19,7 @@ class BarcodeKeyboardListener extends StatefulWidget {
   final BarcodeScannedCallback _onBarcodeScanned;
   final Duration _bufferDuration;
   final bool useKeyDownEvent;
+  final bool caseSensitive;
 
   /// This widget will listen for raw PHYSICAL keyboard events
   /// even when other controls have primary focus.
@@ -41,14 +42,18 @@ class BarcodeKeyboardListener extends StatefulWidget {
       /// Maximum time between two key events.
       /// If time between two key events is longer than this value
       /// previous keys will be ignored.
-      Duration bufferDuration = hundredMs})
+      Duration bufferDuration = hundredMs,
+
+      /// Make barcode scanner case sensitive characters
+      this.caseSensitive = false,
+      })
       : _onBarcodeScanned = onBarcodeScanned,
         _bufferDuration = bufferDuration,
         super(key: key);
 
   @override
   _BarcodeKeyboardListenerState createState() => _BarcodeKeyboardListenerState(
-      _onBarcodeScanned, _bufferDuration, useKeyDownEvent);
+      _onBarcodeScanned, _bufferDuration, useKeyDownEvent, caseSensitive);
 }
 
 const Duration aSecond = Duration(seconds: 1);
@@ -67,10 +72,12 @@ class _BarcodeKeyboardListenerState extends State<BarcodeKeyboardListener> {
 
   final bool _useKeyDownEvent;
 
+  final bool _caseSensitive;
+
   bool _isShiftPressed = false;
 
   _BarcodeKeyboardListenerState(this._onBarcodeScannedCallback,
-      this._bufferDuration, this._useKeyDownEvent) {
+      this._bufferDuration, this._useKeyDownEvent, this._caseSensitive) {
     RawKeyboard.instance.addListener(_keyBoardCallback);
     _keyboardSubscription =
         _controller.stream.where((char) => char != null).listen(onKeyEvent);
@@ -117,7 +124,7 @@ class _BarcodeKeyboardListenerState extends State<BarcodeKeyboardListener> {
         if (keyEvent.data.logicalKey == LogicalKeyboardKey.shiftLeft) {
           _isShiftPressed = true;
         } else {
-          if (_isShiftPressed) {
+          if (_isShiftPressed && _caseSensitive) {
             _isShiftPressed = false;
             _controller.sink.add(String.fromCharCode(
                 ((keyEvent.data) as RawKeyEventDataAndroid).codePoint).toUpperCase());
