@@ -130,8 +130,20 @@ class _BarcodeKeyboardListenerState extends State<BarcodeKeyboardListener> {
         } else {
           if (_isShiftPressed && _caseSensitive) {
             _isShiftPressed = false;
-            _controller.sink.add(String.fromCharCode(
-                ((keyEvent.data) as RawKeyEventDataAndroid).codePoint).toUpperCase());
+            if (((keyEvent.data) as RawKeyEventDataAndroid).codePoint >= 97 &&
+                ((keyEvent.data) as RawKeyEventDataAndroid).codePoint <= 122) {
+              // Convert to uppercase if shift is pressed
+              _controller.sink.add(String.fromCharCode(
+                  ((keyEvent.data) as RawKeyEventDataAndroid).codePoint - 32));
+            } else if (((keyEvent.data) as RawKeyEventDataAndroid).codePoint ==
+                32) {
+              // Space character
+              _controller.sink.add(' ');
+            } else {
+              // Add character as is
+              _controller.sink.add(String.fromCharCode(
+                  ((keyEvent.data) as RawKeyEventDataAndroid).codePoint));
+            }
           } else {
             _controller.sink.add(String.fromCharCode(
                 ((keyEvent.data) as RawKeyEventDataAndroid).codePoint));
