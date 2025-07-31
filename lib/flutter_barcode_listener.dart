@@ -140,9 +140,14 @@ class _BarcodeKeyboardListenerState extends State<BarcodeKeyboardListener> {
               // Space character
               _controller.sink.add(' ');
             } else {
-              // Add character as is
-              _controller.sink.add(String.fromCharCode(
-                  ((keyEvent.data) as RawKeyEventDataAndroid).codePoint));
+              // Handle character "|" when shift is pressed on "\"
+              if (((keyEvent.data) as RawKeyEventDataAndroid).codePoint == 92) {
+                _controller.sink.add(String.fromCharCode(124));
+              } else {
+                // Add character as is
+                _controller.sink.add(String.fromCharCode(
+                    ((keyEvent.data) as RawKeyEventDataAndroid).codePoint));
+              }
             }
           } else {
             _controller.sink.add(String.fromCharCode(
