@@ -128,30 +128,31 @@ class _BarcodeKeyboardListenerState extends State<BarcodeKeyboardListener> {
         if (keyEvent.data.logicalKey == LogicalKeyboardKey.shiftLeft) {
           _isShiftPressed = true;
         } else {
+          final androidData = keyEvent.data as RawKeyEventDataAndroid;
           if (_isShiftPressed && _caseSensitive) {
             _isShiftPressed = false;
-            if (((keyEvent.data) as RawKeyEventDataAndroid).codePoint >= 97 &&
-                ((keyEvent.data) as RawKeyEventDataAndroid).codePoint <= 122) {
+            if (androidData.codePoint >= 97 &&
+                androidData.codePoint <= 122) {
               // Convert to uppercase if shift is pressed
               _controller.sink.add(String.fromCharCode(
-                  ((keyEvent.data) as RawKeyEventDataAndroid).codePoint - 32));
-            } else if (((keyEvent.data) as RawKeyEventDataAndroid).codePoint ==
+                  androidData.codePoint - 32));
+            } else if (androidData.codePoint ==
                 32) {
               // Space character
               _controller.sink.add(' ');
             } else {
               // Handle character "|" when shift is pressed on "\"
-              if (((keyEvent.data) as RawKeyEventDataAndroid).codePoint == 92) {
+              if (androidData.codePoint == 92) {
                 _controller.sink.add(String.fromCharCode(124));
               } else {
                 // Add character as is
                 _controller.sink.add(String.fromCharCode(
-                    ((keyEvent.data) as RawKeyEventDataAndroid).codePoint));
+                    androidData.codePoint));
               }
             }
           } else {
             _controller.sink.add(String.fromCharCode(
-                ((keyEvent.data) as RawKeyEventDataAndroid).codePoint));
+                androidData.codePoint));
           }
         }
       } else if (keyEvent.data is RawKeyEventDataFuchsia) {
@@ -168,8 +169,32 @@ class _BarcodeKeyboardListenerState extends State<BarcodeKeyboardListener> {
         _controller.sink.add(String.fromCharCode(
             ((keyEvent.data) as RawKeyEventDataWindows).keyCode));
       } else if (keyEvent.data is RawKeyEventDataMacOs) {
-        _controller.sink
-            .add(((keyEvent.data) as RawKeyEventDataMacOs).characters);
+        // macOS case sensitivity implementation
+        if (keyEvent.data.logicalKey == LogicalKeyboardKey.shiftLeft ||
+            keyEvent.data.logicalKey == LogicalKeyboardKey.shiftRight) {
+          _isShiftPressed = true;
+        } else {
+          final macOsData = keyEvent.data as RawKeyEventDataMacOs;
+          if (_caseSensitive && _isShiftPressed) {
+            _isShiftPressed = false;
+            // Get the characters from the event
+            final chars = macOsData.characters;
+            if (chars.isNotEmpty) {
+              final codeUnit = chars.codeUnitAt(0);
+              // Check if it's a lowercase letter (a-z)
+              if (codeUnit >= 97 && codeUnit <= 122) {
+                // Convert to uppercase
+                _controller.sink.add(String.fromCharCode(codeUnit - 32));
+              } else {
+                // Add character as is (already shifted by macOS)
+                _controller.sink.add(chars);
+              }
+            }
+          } else {
+            // Add characters without case modification
+            _controller.sink.add(macOsData.characters);
+          }
+        }
       } else if (keyEvent.data is RawKeyEventDataIos) {
         _controller.sink
             .add(((keyEvent.data) as RawKeyEventDataIos).characters);
