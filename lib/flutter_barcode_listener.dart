@@ -166,8 +166,36 @@ class _BarcodeKeyboardListenerState extends State<BarcodeKeyboardListener> {
         _controller.sink
             .add(((keyEvent.data) as RawKeyEventDataLinux).keyLabel);
       } else if (keyEvent.data is RawKeyEventDataWindows) {
-        _controller.sink.add(String.fromCharCode(
-            ((keyEvent.data) as RawKeyEventDataWindows).keyCode));
+        // Windows case sensitivity implementation
+        if (keyEvent.data.logicalKey == LogicalKeyboardKey.shiftLeft ||
+            keyEvent.data.logicalKey == LogicalKeyboardKey.shiftRight) {
+          _isShiftPressed = true;
+        } else {
+          final windowsData = keyEvent.data as RawKeyEventDataWindows;
+          if (_caseSensitive && _isShiftPressed) {
+            _isShiftPressed = false;
+            final keyCode = windowsData.keyCode;
+            // Check if it's a lowercase letter (a-z: 97-122)
+            if (keyCode >= 97 && keyCode <= 122) {
+              // Convert to uppercase
+              _controller.sink.add(String.fromCharCode(keyCode - 32));
+            } else if (keyCode == 32) {
+              // Space character
+              _controller.sink.add(' ');
+            } else {
+              // Handle special characters with shift
+              if (keyCode == 92) {
+                // Handle character "|" when shift is pressed on "\"
+                _controller.sink.add(String.fromCharCode(124));
+              } else {
+                // Add character as is
+                _controller.sink.add(String.fromCharCode(keyCode));
+              }
+            }
+          } else {
+            _controller.sink.add(String.fromCharCode(windowsData.keyCode));
+          }
+        }
       } else if (keyEvent.data is RawKeyEventDataMacOs) {
         // macOS case sensitivity implementation
         if (keyEvent.data.logicalKey == LogicalKeyboardKey.shiftLeft ||
